@@ -1,20 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 24 13:41:36 2018
-
-@author: rishabh
-"""
-
 import numpy as np
 import string
 import os
 import sys
-import operator
 from nltk import pos_tag, word_tokenize
 from datetime import datetime
 
+
 def init_weight(Mi, Mo):
     return np.random.randn(Mi, Mo) / np.sqrt(Mi + Mo)
+
 
 def all_parity_pairs(nbit):
     # total number of samples (Ntotal) will be a multiple of 100
@@ -34,6 +28,7 @@ def all_parity_pairs(nbit):
         Y[ii] = X[ii].sum() % 2
     return X, Y
 
+
 def all_parity_pairs_with_sequence_labels(nbit):
     X, Y = all_parity_pairs(nbit)
     N, t = X.shape
@@ -50,48 +45,143 @@ def all_parity_pairs_with_sequence_labels(nbit):
 
     X = X.reshape(N, t, 1).astype(np.float32)
     return X, Y_t
-    
-def remove_punctuation(s):
-  return s.translate(str.maketrans('','',string.punctuation))
-  
+
+
+# unfortunately Python 2 and 3 translates work differently
+def remove_punctuation_2(s):
+    return s.translate(None, string.punctuation)
+
+
+def remove_punctuation_3(s):
+    return s.translate(str.maketrans('','',string.punctuation))
+
+
+if sys.version.startswith('2'):
+    remove_punctuation = remove_punctuation_2
+else:
+    remove_punctuation = remove_punctuation_3
+
+
 def get_robert_frost():
-    word2idx={'START':0,'END':1}
-    current_idx=2
-    sentences=[]
-    for line in open('E:/RS/ML/Machine learning tuts/Target/Part4(NLP)/14)[FreeTutorials.Us] deep-learning-recurrent-neural-networks-in-python/Code/robert_frost.txt'):
-        line=line.strip()
+    word2idx = {'START': 0, 'END': 1}
+    current_idx = 2
+    sentences = []
+    for line in open('robert_frost.txt'):
+        line = line.strip()
         if line:
-            tokens=remove_punctuation(line.lower()).split()
-            sentence=[]
+            tokens = remove_punctuation(line.lower()).split()
+            sentence = []
             for t in tokens:
                 if t not in word2idx:
-                    word2idx[t]=current_idx
-                    current_idx+=1
-                idx=word2idx[t]
+                    word2idx[t] = current_idx
+                    current_idx += 1
+                idx = word2idx[t]
                 sentence.append(idx)
             sentences.append(sentence)
-    return sentences,word2idx
-''' 
-word2idx={'START':0,'END':1}
-current_idx=2
-sentences=[]
-for line in open('E:/RS/ML/Machine learning tuts/Target/Part4(NLP)/14)[FreeTutorials.Us] deep-learning-recurrent-neural-networks-in-python/Code/robert_frost.txt'):
-    line=line.strip()
-    if line:
-        tokens=remove_punctuation(line.lower()).split()
-        sentence=[]
-        for t in tokens:
-            if t not in word2idx:
-                word2idx[t]=current_idx
-                current_idx+=1
-            idx=word2idx[t]
-            sentence.append(idx)
-        sentences.append(sentence)
-V=len(word2idx)
-D=30        
-We=init_weight(V,D)
-sentences[0].shape
-sentences
-Wout=We[sentences]
-Wout.shape[0]
-'''
+    return sentences, word2idx
+
+
+def my_tokenizer(s):
+    s = remove_punctuation(s)
+    s = s.lower() # downcase
+    return s.split()
+
+
+def get_tags(s):
+    tuples = pos_tag(word_tokenize(s))
+    return [y for x, y in tuples]
+
+
+def get_poetry_classifier_data(samples_per_class, load_cached=True, save_cached=True):
+    datafile = 'poetry_classifier_data.npz'
+    if load_cached and os.path.exists(datafile):
+        npz = np.load(datafile)
+        X = npz['arr_0']
+        Y = npz['arr_1']
+        V = int(npz['arr_2'])
+        return X, Y, V
+
+    word2idx = {}
+    current_idx = 0
+    X = []
+    Y = []
+    for fn, label in zip(('edgar_allan_poe.txt', 'robert_frost.txt'), (0, 1)):
+        count = 0
+        for line in open(fn):
+            line = line.rstrip()
+            if line:
+                # print(line)
+                # tokens = remove_punctuation(line.lower()).split()
+                tokens = get_tags(line)
+                if len(tokens) > 1:
+                    # scan doesn't work nice here, technically could fix...
+                    for token in tokens:
+                        if token not in word2idx:
+                            word2idx[token] = current_idx
+                            current_idx += 1
+                    sequence = np.array([word2idx[w] for w in tokens])
+                    X.append(sequence)
+                    Y.append(label)
+                    count += 1
+                    print(count)
+                    # quit early because the tokenizer is very slow
+                    if count >= samples_per_class:
+                        break
+    if save_cached:
+        np.savez(datafile, X, Y, current_idx)
+    return X, Y, current_idx
+
+
+# t = theano.printing.Print('T')(y)
+# def get_stock_data():
+#     input_files = os.listdir('stock_data')
+#     min_length = 2000
+#
+#     # first find the latest start date
+#     # so that each time series can start at the same time
+#     max_min_date = datetime(2000, 1, 1)
+#     line_counts = {}
+#     for f in input_files:
+#         n = 0
+#         for line in open('stock_data/%s' % f):
+#             # pass
+#             n += 1
+#         line_counts[f] = n
+#         if n > min_length:
+#             # else we'll ignore this symbol, too little data
+#             # print 'stock_data/%s' % f, 'num lines:', n
+#             last_line = line
+#             date = line.split(',')[0]
+#             date = datetime.strptime(date, '%Y-%m-%d')
+#             if date > max_min_date:
+#                 max_min_date = date
+#
+#     print("max min date:", max_min_date)
+#
+#     # now collect the data up to min date
+#     all_binary_targets = []
+#     all_prices = []
+#     for f in input_files:
+#         if line_counts[f] > min_length:
+#             prices = []
+#             binary_targets = []
+#             first = True
+#             last_price = 0
+#             for line in open('stock_data/%s' % f):
+#                 if first:
+#                     first = False
+#                     continue
+#                 date, price = line.split(',')[:2]
+#                 date = datetime.strptime(date, '%Y-%m-%d')
+#                 if date < max_min_date:
+#                     break
+#                 prices.append(float(price))
+#                 target = 1 if last_price < price else 0
+#                 binary_targets.append(target)
+#                 last_price = price
+#             all_prices.append(prices)
+#             all_binary_targets.append(binary_targets)
+#
+#     # D = number of symbols
+#     # T = length of series
+#     return np.array(all_prices).T, np.array(all_binary_targets).T # make it T x D
