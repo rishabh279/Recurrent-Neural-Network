@@ -2,7 +2,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 
-from .util import init_weight
+from .utility import init_weight
 
 class LSTM:
     def __init__(self, mi, mo, activation):

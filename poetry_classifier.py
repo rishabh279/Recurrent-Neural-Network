@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn.utils import shuffle
-from util import init_weight, get_poetry_classifier_data
+from utility import init_weight, get_poetry_classifier_data
 
 
 class SimpleRNN:
@@ -60,8 +60,8 @@ class SimpleRNN:
             for j in range(1):
                 # we set 0 to start and 1 to end
                 # print "X[%d]:" % j, X[j], "len:", len(X[j])
-                print(X[j])
-                print(Y[j])
+                # print(X[j])
+                # print(Y[j])
                 c, p = self.train_op(X[j], Y[j], learning_rate)
                 # print "p:", p, "y:", Y[j]
                 cost += c
@@ -130,8 +130,8 @@ class SimpleRNN:
             n_steps=thX.shape[0],
         )
         # t = theano.printing.Print('T')(y)
-        py_x = y[-1, 0, :]  # only interested in the final classification of the sequence
-
+        # py_x = t[-1, 0, :]  # only interested in the final classification of the sequence
+        py_x = y[-1, 0, :]
         prediction = T.argmax(py_x)
         self.predict_op = theano.function(
             inputs=[thX],

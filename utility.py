@@ -105,7 +105,7 @@ def get_poetry_classifier_data(samples_per_class, load_cached=True, save_cached=
     current_idx = 0
     X = []
     Y = []
-    for fn, label in zip(('edgar_allan_poe.txt', 'robert_frost.txt'), (0, 1)):
+    for fn, label in zip(('data/edgar_allan_poe.txt', 'data/robert_frost.txt'), (0, 1)):
         count = 0
         for line in open(fn):
             line = line.rstrip()
@@ -123,7 +123,6 @@ def get_poetry_classifier_data(samples_per_class, load_cached=True, save_cached=
                     X.append(sequence)
                     Y.append(label)
                     count += 1
-                    print(count)
                     # quit early because the tokenizer is very slow
                     if count >= samples_per_class:
                         break

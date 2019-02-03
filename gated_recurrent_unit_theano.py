@@ -2,7 +2,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 
-from .util import init_weight
+from .utility import init_weight
 
 
 class GRU:
@@ -46,7 +46,7 @@ class GRU:
         h, _ = theano.scan(
             fn=self.recurrence,
             sequences=x,
-            outputs_info=self,
+            outputs_info=[self.h0],
             n_steps=x.shape[0],
         )
         return h
